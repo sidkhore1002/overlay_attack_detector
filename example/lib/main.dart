@@ -13,26 +13,39 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool _overlayEnabled = false;
-  bool _overlayDetected = false;
+  bool overlayEnabled = false;
+  bool overlayDetected = false;
 
   @override
   void initState() {
     super.initState();
-    checkOverlay();
+    checkOverlayPermission();
     listenOverlay();
   }
 
-  Future<void> checkOverlay() async {
+  Future<void> checkOverlayPermission() async {
     final result = await OverlayAttackDetector.isOverlayEnabled();
-    if (!mounted) return;
-    setState(() => _overlayEnabled = result);
+
+    setState(() {
+      overlayEnabled = result;
+    });
   }
 
   void listenOverlay() {
     OverlayAttackDetector.overlayAttackStream.listen((detected) {
-      if (!mounted) return;
-      setState(() => _overlayDetected = detected);
+      setState(() {
+        overlayDetected = detected;
+      });
+
+      if (detected) {
+        showDialog(
+          context: context,
+          builder: (_) => const AlertDialog(
+            title: Text("Security Warning"),
+            content: Text("Overlay detected. Please disable overlay apps."),
+          ),
+        );
+      }
     });
   }
 
@@ -40,31 +53,34 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Overlay Attack Detector Example')),
+        appBar: AppBar(
+          title: const Text("Overlay Attack Detector"),
+        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                _overlayEnabled
-                    ? "Overlay permission enabled"
-                    : "Overlay permission disabled",
-                style: const TextStyle(fontSize: 16),
+                overlayEnabled
+                    ? "Overlay Permission Enabled"
+                    : "Overlay Permission Disabled",
+                style: const TextStyle(fontSize: 18),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () => OverlayAttackDetector.openOverlaySettings(),
+                onPressed: () {
+                  OverlayAttackDetector.openOverlaySettings();
+                },
                 child: const Text("Open Overlay Settings"),
               ),
               const SizedBox(height: 40),
               Text(
-                _overlayDetected
-                    ? "⚠️ Overlay detected! Possible attack!"
-                    : "No overlay detected",
+                overlayDetected
+                    ? "⚠ Overlay Attack Detected"
+                    : "No Overlay Detected",
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: _overlayDetected ? Colors.red : Colors.green,
+                  fontSize: 22,
+                  color: overlayDetected ? Colors.red : Colors.green,
                 ),
               ),
             ],
