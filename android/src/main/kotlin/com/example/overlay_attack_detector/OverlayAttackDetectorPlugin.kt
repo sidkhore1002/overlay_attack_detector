@@ -1,11 +1,12 @@
 package com.example.overlay_attack_detector
 
 import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import android.view.MotionEvent
-import android.view.View
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -14,8 +15,10 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
-class OverlayAttackDetectorPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
-    EventChannel.StreamHandler, ActivityAware {
+class OverlayAttackDetectorPlugin : FlutterPlugin,
+    MethodChannel.MethodCallHandler,
+    EventChannel.StreamHandler,
+    ActivityAware {
 
     private var activity: Activity? = null
     private var eventSink: EventChannel.EventSink? = null
@@ -23,9 +26,9 @@ class OverlayAttackDetectorPlugin : FlutterPlugin, MethodChannel.MethodCallHandl
     private lateinit var methodChannel: MethodChannel
     private lateinit var eventChannel: EventChannel
 
-    private var touchListener: View.OnTouchListener? = null
-
-    override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onAttachedToEngine(
+        @NonNull binding: FlutterPlugin.FlutterPluginBinding
+    ) {
 
         methodChannel =
             MethodChannel(binding.binaryMessenger, "overlay_attack_detector")
@@ -56,13 +59,12 @@ class OverlayAttackDetectorPlugin : FlutterPlugin, MethodChannel.MethodCallHandl
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && activity != null) {
 
-                    val intent = android.content.Intent(
+                    val intent = Intent(
                         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        android.net.Uri.parse("package:" + activity!!.packageName)
+                        Uri.parse("package:" + activity!!.packageName)
                     )
 
-                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     activity!!.startActivity(intent)
                 }
 
@@ -73,7 +75,9 @@ class OverlayAttackDetectorPlugin : FlutterPlugin, MethodChannel.MethodCallHandl
         }
     }
 
-    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onDetachedFromEngine(
+        @NonNull binding: FlutterPlugin.FlutterPluginBinding
+    ) {
 
         methodChannel.setMethodCallHandler(null)
         eventChannel.setStreamHandler(null)
@@ -83,37 +87,46 @@ class OverlayAttackDetectorPlugin : FlutterPlugin, MethodChannel.MethodCallHandl
 
         eventSink = events
 
-        val rootView = activity?.window?.decorView ?: return
-
-        Log.d("OverlayDetector", "Touch detection enabled")
-
-        touchListener = View.OnTouchListener { _, event ->
-
-            val obscured =
-                (event.flags and MotionEvent.FLAG_WINDOW_IS_OBSCURED != 0) ||
-                        (event.flags and MotionEvent.FLAG_WINDOW_IS_PARTIALLY_OBSCURED != 0)
-
-            Log.d("OverlayDetector", "Touch flags=${event.flags} obscured=$obscured")
-
-            if (obscured) {
-                eventSink?.success(true)
-            }
-            false
-        }
-
-        rootView.setOnTouchListener(touchListener)
+        Log.d("OverlayDetector", "Overlay detection started")
     }
 
     override fun onCancel(arguments: Any?) {
 
         eventSink = null
-
-        activity?.window?.decorView?.setOnTouchListener(null)
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
 
         activity = binding.activity
+
+        binding.addOnUserLeaveHintListener {
+            false
+        }
+
+        binding.addOnNewIntentListener {
+            false
+        }
+
+        binding.addOnSaveStateListener { _, _ -> }
+
+        // intercept touch events globally
+        binding.activity.window.decorView.setOnTouchListener { _, event ->
+
+            val obscured =
+                (event.flags and MotionEvent.FLAG_WINDOW_IS_OBSCURED) != 0 ||
+                (event.flags and MotionEvent.FLAG_WINDOW_IS_PARTIALLY_OBSCURED) != 0
+
+            Log.d(
+                "OverlayDetector",
+                "Touch flags=${event.flags} overlayDetected=$obscured"
+            )
+
+            if (obscured) {
+                eventSink?.success(true)
+            }
+
+            false
+        }
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -121,7 +134,9 @@ class OverlayAttackDetectorPlugin : FlutterPlugin, MethodChannel.MethodCallHandl
         activity = null
     }
 
-    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+    override fun onReattachedToActivityForConfigChanges(
+        binding: ActivityPluginBinding
+    ) {
 
         activity = binding.activity
     }

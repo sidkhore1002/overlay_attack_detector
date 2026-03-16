@@ -4,5 +4,9 @@
   <!-- Permission required for overlay detection -->
   <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-  <application />
+  <application
+    android:label="overlay_attack_detector"
+    android:allowBackup="true">
+  </application>
+
 </manifest>
