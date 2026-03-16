@@ -7,6 +7,7 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import android.view.MotionEvent
+import android.view.Window
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -22,6 +23,7 @@ class OverlayAttackDetectorPlugin : FlutterPlugin,
 
     private var activity: Activity? = null
     private var eventSink: EventChannel.EventSink? = null
+    private var originalCallback: Window.Callback? = null
 
     private lateinit var methodChannel: MethodChannel
     private lateinit var eventChannel: EventChannel
@@ -86,7 +88,6 @@ class OverlayAttackDetectorPlugin : FlutterPlugin,
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
 
         eventSink = events
-
         Log.d("OverlayDetector", "Overlay detection started")
     }
 
@@ -99,33 +100,29 @@ class OverlayAttackDetectorPlugin : FlutterPlugin,
 
         activity = binding.activity
 
-        binding.addOnUserLeaveHintListener {
-            false
-        }
+        val window = activity!!.window
+        originalCallback = window.callback
 
-        binding.addOnNewIntentListener {
-            false
-        }
+        window.callback = object : Window.Callback by originalCallback!! {
 
-        binding.addOnSaveStateListener { _, _ -> }
+            override fun dispatchTouchEvent(event: MotionEvent): Boolean {
 
-        // intercept touch events globally
-        binding.activity.window.decorView.setOnTouchListener { _, event ->
+                if (event.action == MotionEvent.ACTION_DOWN) {
 
-            val obscured =
-                (event.flags and MotionEvent.FLAG_WINDOW_IS_OBSCURED) != 0 ||
-                (event.flags and MotionEvent.FLAG_WINDOW_IS_PARTIALLY_OBSCURED) != 0
+                    val obscured =
+                        (event.flags and MotionEvent.FLAG_WINDOW_IS_OBSCURED) != 0 ||
+                        (event.flags and MotionEvent.FLAG_WINDOW_IS_PARTIALLY_OBSCURED) != 0
 
-            Log.d(
-                "OverlayDetector",
-                "Touch flags=${event.flags} overlayDetected=$obscured"
-            )
+                    Log.d(
+                        "OverlayDetector",
+                        "Touch flags=${event.flags} overlayDetected=$obscured"
+                    )
 
-            if (obscured) {
-                eventSink?.success(true)
+                    eventSink?.success(obscured)
+                }
+
+                return originalCallback!!.dispatchTouchEvent(event)
             }
-
-            false
         }
     }
 
@@ -138,7 +135,7 @@ class OverlayAttackDetectorPlugin : FlutterPlugin,
         binding: ActivityPluginBinding
     ) {
 
-        activity = binding.activity
+        onAttachedToActivity(binding)
     }
 
     override fun onDetachedFromActivity() {

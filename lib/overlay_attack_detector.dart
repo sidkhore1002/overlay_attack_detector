@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 class OverlayAttackDetector {
-
   static const MethodChannel _channel =
       MethodChannel('overlay_attack_detector');
 
