@@ -1,15 +1,30 @@
-# Overlay Attack Detector
+# overlay_attack_detector
 
-Flutter plugin to detect overlay apps and protect sensitive UI such as payment screens.
+**Author:** Siddharth Khore  
+GitHub: https://github.com/sidkhore1002  
 
-## Features
+[![pub package](https://img.shields.io/pub/v/overlay_attack_detector.svg)](https://pub.dev/packages/overlay_attack_detector)
+[![GitHub stars](https://img.shields.io/github/stars/sidkhore1002/overlay_attack_detector.svg)](https://github.com/sidkhore1002/overlay_attack_detector)
 
-- Detect overlay permission
-- Open overlay permission settings
-- Android support
+A Flutter plugin to **detect overlay attacks and obscured touches** on Android to secure sensitive screens such as payments, login, and OTP screens.
 
-## Usage
+---
 
-import 'package:overlay_attack_detector/overlay_attack_detector.dart';
+## ✨ Features
 
-bool overlay = await OverlayAttackDetector.isOverlayEnabled();
+- ✅ Detect overlay permission (is any app drawing over your app)
+- ✅ Detect obscured touches in real-time
+- ✅ Open overlay permission settings
+- ✅ Protect sensitive UI from tapjacking
+- ✅ Lightweight and easy to integrate
+- ✅ Works on Android (iOS not supported)
+
+---
+
+## 📦 Installation
+
+Add this to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  overlay_attack_detector: ^0.0.9
