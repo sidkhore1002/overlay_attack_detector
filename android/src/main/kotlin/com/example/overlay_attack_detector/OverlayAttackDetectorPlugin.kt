@@ -95,8 +95,9 @@ class OverlayAttackDetectorPlugin : FlutterPlugin, MethodChannel.MethodCallHandl
 
             Log.d("OverlayDetector", "Touch flags=${event.flags} obscured=$obscured")
 
-            eventSink?.success(obscured)
-
+            if (obscured) {
+                eventSink?.success(true)
+            }
             false
         }
 
