@@ -1,6 +1,6 @@
 name: overlay_attack_detector
 description: Flutter plugin to detect overlay attacks and obscured touches for secure payment flows on Android.
-version: 0.0.6
+version: 0.0.7
 homepage: https://github.com/sidkhore1002/overlay_attack_detector
 topics:
   - flutter-plugin
